@@ -1,3 +1,11 @@
+
+# Without extension 
+*
+!/**/
+!*.*
+!Makefile
+
+
 # Prerequisites
 *.d
 
