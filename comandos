@@ -1,0 +1,20 @@
+=========================================
+======= GIT
+
+$ git clone “caminho do repositório” 
+(Clona para a pasta atual)
+
+$ git pull origin master 
+(Puxa do servidor para o local)
+
+$ git add .
+(adiciona todos os arquivos ao seu repositorio)
+
+$ git commit -m “Comentário” 
+(junta e da um nome as ultimas alteracoes adicionadas)
+
+$ git push -u origin master 
+(Empurra o local para o servidor)
+
+=========================================
+======= GCC

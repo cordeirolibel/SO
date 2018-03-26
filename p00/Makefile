@@ -1,4 +1,4 @@
-all: output clean
+all: clean_out output clean
 
 output: testafila.o queue.o
 	gcc testafila.o queue.o -o output
@@ -8,6 +8,9 @@ testafila.o: testafila.c
 
 queue.o: queue.c queue.h
 	gcc -c queue.c
+
+clean_out:
+	rm output
 
 clean:
 	rm *.o
