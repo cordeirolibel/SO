@@ -148,6 +148,7 @@ int main (int argc, char **argv, char **envp)
    // esvazia fila0, retirando sempre o primeiro elemento
    printf ("Remocao %d vezes o primeiro elemento...\n", N) ;
    i=0 ;
+
    while (i<N)
    {
       aux = fila0 ;

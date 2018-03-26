@@ -22,17 +22,17 @@ void queue_append (queue_t **queue, queue_t *elem) {
 
 	//a fila deve existir
 	if (queue == NULL){
-		printf("ERRO: Fila nao existe\n");
+		printf("ERRO: Fila nao existe.\n");
 		return;
 	}
 	//o elemento deve existir
 	else if (elem == NULL){
-		printf("ERRO: Elemento nao existe\n");
+		printf("ERRO: Elemento nao existe.\n");
 		return;
 	}
 	//o elemento nao deve estar em outra fila
 	else if (elem->next != NULL || elem->prev != NULL){
-		printf("ERRO: Elemento esta em outra fila\n");
+		printf("ERRO: Elemento esta em outra fila.\n");
 		return;
 	}
 
@@ -65,7 +65,73 @@ void queue_append (queue_t **queue, queue_t *elem) {
 // Retorno: apontador para o elemento removido, ou NULL se erro
 
 queue_t *queue_remove (queue_t **queue, queue_t *elem) {
-	return NULL; 
+	//A fila deve existir
+	if (queue == NULL)
+	{
+		printf("ERRO: Fila nao existe.\n");
+		return NULL;
+	}
+	//A fila não deve estar vazia
+	else if (*queue == NULL)
+	{
+		printf("ERRO: Fila vazia.\n");
+		return NULL;
+	}
+	// O elemento deve existir
+	else if (elem == NULL)
+	{
+		printf("ERRO: Elemento nao existe.\n");
+		return NULL;
+	}
+	// O elemento deve pertencer a fila indicada
+	else
+	{
+		queue_t* aux = (*queue);
+		
+		do
+		{
+			if (aux->next == elem->next)
+			{
+				if (queue_size(*queue) > 1)
+				{
+					aux = elem;
+					if (aux == *queue)
+					{
+						(*queue) = aux->next;
+						aux->prev->next = aux->next;
+						aux->next->prev = aux->prev;
+						elem->next = NULL;
+						elem->prev = NULL;
+						return aux;
+					}
+					else
+					{
+						aux->prev->next = aux->next;
+						aux->next->prev = aux->prev;
+						elem->next = NULL;
+						elem->prev = NULL;
+						return aux;
+					}
+					
+				}
+				else
+				{
+					aux = elem;
+					(*queue) = NULL;
+					elem->next = NULL;
+					elem->prev = NULL;
+					return aux;
+				}
+			}
+			else
+			{
+				aux = aux->next; // Proximo elemento
+			}
+		} while(aux != (*queue));
+
+		printf("ERRO: Elemento nao pertence a fila.\n");
+		return NULL;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -73,7 +139,6 @@ queue_t *queue_remove (queue_t **queue, queue_t *elem) {
 // Retorno: numero de elementos na fila
 
 int queue_size (queue_t *queue) { 
-
 	//vazia
 	if (queue == NULL)
 		return 0;
@@ -109,9 +174,9 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) ) {
 			printf(" ");
 			print_elem(queue_moved);
 			queue_moved = queue_moved->next;
-
 		}
 	}
+
 
 	printf("]\n");
 	return;
