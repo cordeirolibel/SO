@@ -6,6 +6,8 @@
 !Makefile
 !comandos
 
+.DS_Store
+
 # Prerequisites
 *.d
 

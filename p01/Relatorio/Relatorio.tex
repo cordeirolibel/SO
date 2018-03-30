@@ -1,0 +1,136 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% University/School Laboratory Report
+% LaTeX Template
+% Version 3.1 (25/3/14)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Linux and Unix Users Group at Virginia Tech Wiki 
+% (https://vtluug.org/wiki/Example_LaTeX_chem_lab_report)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage[version=3]{mhchem} % Package for chemical equation typesetting
+\usepackage[top=2cm, bottom=2cm, left=3cm, right=2cm]{geometry}%margin defined
+\usepackage{siunitx} % Provides the \SI{}{} and \si{} command for typesetting SI units
+\usepackage{graphicx} % Required for the inclusion of images
+\usepackage{natbib} % Required to change bibliography style to APA
+\usepackage{amsmath} % Required for some math elements 
+\usepackage[brazil]{babel}% For the portuguese texts
+\usepackage[utf8]{inputenc}
+\usepackage{float} %for [H] in \begin{figure}[H]
+\usepackage{relsize} %for \mathlarger
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+
+\renewcommand{\labelenumi}{\alph{enumi}.} % Make numbering in the enumerate environment by letter rather than number (e.g. section 6)
+
+%definindo novos comandos
+\newcommand{\tab}{\hspace{10mm}}
+\newcommand{\celsius}{$\,^{\circ}\mathrm{C}$}
+\newcommand{\sensibilidade}{\mathlarger{\mathlarger {S}}}
+
+\usepackage{colortbl}%
+\newcommand{\myrowcolour}{\rowcolor[gray]{0.925}}
+%\usepackage{times} % Uncomment to use the Times New Roman font
+
+
+%----------------------------------------------------------------------------------------
+%	DOCUMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title{Trocas de Contexto} % Title
+\author{Gabriel Souza e Silva \and Gustavo Cordeiro Libel} % Author name
+\date{Abril de 2016} % Date for the report
+
+\begin{document}
+
+\maketitle % Insert the title, author and date
+\begin{center}
+	Universidade Tecnológica Federal do Paraná\\
+	Fundamentos de Análise de Circuitos Elétricos
+\end{center}
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+
+\textbf{\large ucontext:}
+
+The $<$ucontext.h$>$ header defines the ucontext\_t type as a structure that includes at least the following members:
+
+\begin{table}[H]
+	\centering
+	%\caption{My caption}
+	\label{my-label}
+	\begin{tabular}{|l|l|l|}
+		\hline 
+		ucontext\_t & *uc\_link    & pointer to the context that will be resumed when this context returns \\
+		sigset\_t   & uc\_sigmask  & the set of signals that are blocked when this context is active       \\
+		stack\_t    & uc\_stack    & the stack used by this context                                        \\
+		mcontext\_t & uc\_mcontext & a machine-specific representation of the saved context          \\
+		\hline      
+	\end{tabular}
+\end{table}
+
+
+\textbf{\large BodyPing/BodyPong:}
+
+print arg e iterador
+
+troca de contexto => Salva o contexto atual em ContextPing e restaura o contexto de ContextPong
+
+faz isso 4 vezes
+
+e troca contexto uma ultima vez
+
+\textbf{\large Main:}
+
+pega contexto
+aloca espaço para stack
+
+
+1. Explicar o objetivo e os parâmetros de cada uma das quatro funções acima.
+
+2. Explicar o significado dos campos da estrutura ucontext\_t que foram utilizados no código.
+
+ContextPong.uc\_stack.ss\_sp = stack ;
+ContextPong.uc\_stack.ss\_size = STACKSIZE;
+ContextPong.uc\_stack.ss\_flags = 0;
+ContextPong.uc\_link = 0;
+
+3. Explicar cada linha do código de pingpong.c que chame uma dessas funções ou que manipule estruturas do tipo ucontext\_t .
+
+\begin{table}[H]
+	\centering
+	%\caption{My caption}
+	\label{my-label}
+	\begin{tabular}{|l|l|}
+		\hline
+		Linhas 26/30  & Salva o contexto atual em ContextPing e restaura o contexto de ContextPong.\\ \myrowcolour
+		Linhas 44/48  & Salva o contexto atual em ContextPong e restaura o contexto de ContextPing.\\
+		Linha 59      & Salva o contexto atual em ContextPing.  \\ \myrowcolour
+		Linha 63 a 67 & \begin{tabular}[c]{@{}l@{}}Ajusta os valores de uc\_stack.ss\_sp, uc\_stack.ss\_size, \\ uc\_stack.ss\_flags, uc\_link de ContextPing.\end{tabular} \\
+		Linha 75      & Ajusta os valores internos de ContextPing, set função BodyPing e seus argumentos\\ \myrowcolour
+		Linha 77      & Salva o contexto atual em ContextPong. \\
+		Linha 82 a 85 & \begin{tabular}[c]{@{}l@{}}Ajusta os valores de uc\_stack.ss\_sp, uc\_stack.ss\_size, \\ uc\_stack.ss\_flags, uc\_link de ContextPong.\end{tabular} \\ \myrowcolour
+		Linha 93      & Ajusta os valores internos de ContextPong, set função BodyPong e seus argumentos  \\
+		Linha 95      & Salva o contexto atual em ContextMain e restaura o contexto de ContextPing.   \\ \myrowcolour
+		Linha 96      & Salva o contexto atual em ContextMain e restaura o contexto de ContextPong.    \\ \hline                                                                    
+	\end{tabular}
+\end{table}
+
+4. Desenhar o diagrama de tempo da execução.
+
+\end{document}

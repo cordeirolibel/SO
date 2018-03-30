@@ -10,7 +10,7 @@ queue.o: queue.c queue.h
 	gcc -c queue.c
 
 clean_out:
-	rm output
+	rm -rf output
 
 clean:
-	rm *.o
+	rm -rf *.o
