@@ -7,10 +7,18 @@
 #ifndef __DATATYPES__
 #define __DATATYPES__
 
+#include <ucontext.h>
+
 // Estrutura que define uma tarefa
 typedef struct task_t
 {
-  // preencher quando necessário
+	// para usar com a biblioteca de filas (cast
+	struct task_t *prev, *next;
+	// ID da tarefa
+	int tid;
+	// contexto 
+	ucontext_t *context;
+
 } task_t ;
 
 // estrutura que define um semáforo

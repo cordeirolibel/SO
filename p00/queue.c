@@ -1,5 +1,5 @@
 /**========================================================
-| UTFPR  2018   Cperating System
+| UTFPR  2018   Operating System
 | https://github.com/gabrielsouzaesilva/
 | https://github.com/cordeirolibel/
 =========================================================**/
