@@ -1,7 +1,7 @@
 all: clean clean_out output clean
 
 output: pingpong-tasks1.o pingpong.o
-	gcc pingpong-tasks1.o -o output
+	gcc pingpong-tasks1.o pingpong.o -o output
 
 pingpong-tasks1.o: pingpong-tasks1.c
 	gcc -c pingpong-tasks1.c

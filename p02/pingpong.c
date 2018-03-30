@@ -81,7 +81,7 @@ int task_create (task_t *task,			// descritor da nova tarefa
 // alterna a execução para a tarefa indicada
 int task_switch(task_t *task) {
 
-    return i;
+    return 0;
 }
 
 
