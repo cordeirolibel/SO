@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include "datatypes.h"		// estruturas de dados necessárias
+#include "pingpong.h"
 
 #define STACKSIZE 32768		/* tamanho de pilha das threads */
 
@@ -15,7 +16,10 @@
 // Variaveis globais ===========================================
 
 // Estrutura que define uma tarefa main
-task_t* tk_main;
+task_t *tk_main;
+task_t *tk_atual, *tk_aux;
+ucontext_t ct_main;
+
 int id_tasks;
 
 //==============================================================
@@ -31,11 +35,17 @@ void pingpong_init () {
 	// C++  >> task_t* tk_main = new task_t;
 	tk_main = malloc(sizeof(*tk_main)); 
 	// C++  >> ucontext_t* ct_main = new ct_main;
-	ucontext_t* ct_main = malloc(sizeof(*ct_main)); 
+	ucontext_t* ct_main = malloc(sizeof(*ct_main));
+	getcontext(ct_main); // armazena contexto atual em ct_main
 	tk_main->context = ct_main;
 
 	//id de tarefas inicia em 0
 	id_tasks = 0;
+
+	tk_aux = NULL;
+
+	//Referencia para task atual
+	tk_atual = tk_main;
 
 	return;
 }
@@ -49,13 +59,9 @@ int task_create (task_t *task,			// descritor da nova tarefa
                  void *arg) {			// argumentos para a tarefa
 
 	// Crianto contexto
-	ucontext_t* context = malloc(sizeof(*context)); 
-	task->context = context;
-	getcontext (context);
+	ucontext_t* context = malloc(sizeof(*context));
 
-	//ajusta id
-	id_tasks++;
-	task->tid = id_tasks;
+	getcontext (context);
 
 	//Criando Pilha
 	char *stack = malloc (STACKSIZE) ;
@@ -70,6 +76,11 @@ int task_create (task_t *task,			// descritor da nova tarefa
 		exit (1);
 	}
 
+	//ajusta id
+	id_tasks++;
+	task->tid = id_tasks;
+	task->context = context;
+
 	// ajusta alguns valores internos do contexto salvo em context
 	makecontext (context, (void*)(*start_func), 1, arg);
 
@@ -80,8 +91,11 @@ int task_create (task_t *task,			// descritor da nova tarefa
 
 // alterna a execução para a tarefa indicada
 int task_switch(task_t *task) {
-
-    return 0;
+	int result = 0;
+	tk_aux = tk_atual;
+	tk_atual = task;
+	result = swapcontext(tk_aux->context, tk_atual->context); // swapcontex retorna 0 se ok ou -1 se der erro.
+	return result;
 }
 
 
@@ -99,9 +113,11 @@ void task_exit (int exitCode) {
 }
 
 
-
 // retorna o identificador da tarefa corrente (main eh 0)
-int task_id () ;
+int task_id ()
+{
+	return tk_atual->tid;
+}
 
 // suspende uma tarefa, retirando-a de sua fila atual, adicionando-a à fila
 // queue e mudando seu estado para "suspensa"; usa a tarefa atual se task==NULL
