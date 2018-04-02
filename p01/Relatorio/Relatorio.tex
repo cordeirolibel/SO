@@ -58,13 +58,45 @@
 
 \maketitle % Insert the title, author and date
 \begin{center}
-	Universidade Tecnológica Federal do Paraná\\
-	Fundamentos de Análise de Circuitos Elétricos
+	Relatório p01
 \end{center}
 
 %----------------------------------------------------------------------------------------
 %	SECTION 1
 %----------------------------------------------------------------------------------------
+
+\section{Funcionamento contexts.c}
+Primeiramente o código contextx.c cria as estruturas ucontext\_t ContextPing, ContextPong e ContextMain. Ao iniciar a função main(), é criado um ponteiro do tipo char e o contexto atual é salvo na estrutura ContextPing. Então é alocado espaço para stack e caso esta operação seja executada com sucesso são atribuidos valores para as variáveis de ContextPing, no entanto em caso de erro nesse processo o programa imprime uma messagem de erro e finaliza sua execução.
+
+No caso em que a execução do programa continua, a função makecontext é chamada para alterar o conteúdo de ContextPing. Em seguida, o mesmo procedimento feito com ContextPing é feito com ContextPong. Por fim, na linha 95 a função swapcontext() é chamada para retomar o contexto de ContextPing, executando a função BodyPing que fica alternando contexto com a função BodyPong. Ao fim desse processo, a função swapcontext() é chamada mais uma vez para alterar o contexto para ContextPong e imprimir a ultima mensagem de pong. A saída resultante é a seguinte:
+
+Main INICIO
+
+Ping iniciada
+
+Ping 0
+
+Pong iniciada
+
+Pong 0
+
+Ping 1
+
+Pong 1
+
+Ping 2
+
+Pong 2
+
+Ping 3
+
+Pong 3
+
+Ping FIM
+
+Pong FIM
+
+Main FIM
 
 \textbf{\large ucontext:}
 
@@ -101,18 +133,42 @@ pega contexto
 aloca espaço para stack
 
 
-\section*{1. Explicar o objetivo e os parâmetros de cada uma das quatro funções acima.}
+\section{Chamadas de sistema POSIX para manipulação de contextos.}
 
-\section*{2. Explicar o significado dos campos da estrutura ucontext\_t que foram utilizados no código.}
-\begin{itemize}
-	\item ContextPong.uc\_stack.ss\_sp = stack ;
-	\item ContextPong.uc\_stack.ss\_size = STACKSIZE;
-	\item ContextPong.uc\_stack.ss\_flags = 0;
-	\item ContextPong.uc\_link = 0;
-\end{itemize}
+	\subsection{int getcontext(ucontext\_t *ucp)}
+	A chamada de sistema getcontext é utilizada para receber o contexto em execução no momento, armazenando-o na estrutura apontada por ucp.
+	A função retorna 0 em caso de sucesso ou -1 caso o procedimento falhe.
+	
+	
+	\subsection{int setcontext(const ucontext\_t *ucp)}
+	A chamada de sistema setcontext restaura o contexto apontado por ucp. Em caso de sucesso, a chamada não retorna algum valor, mas sim retoma o contexto apontado por ucp. Já no caso de falha é retornado -1.
+	
+	
+	\subsection{int swapcontext(ucontext\_t *oucp, ucontext\_t *ucp)}
+	A função salva o contexto atual na estrutura apontada por oucp e restaura o contexto armazenado na estrutura apontada por ucp. A função não retorna valores na chamada inicial, no entanto caso o contexto salvo não seja modificado utilizando a função makecontext() e seja feita uma chamada subsequente de setcontext() ou swapcontext() retomando o contexto salvo primeiramente, a função retorna 0.
+	
+	
+	\subsection{void makecontext(ucontext\_t *ucp, void(*func)(), int argc, ...)}
+	A função makecontext altera o conteúdo especificado por ucp, que foi inicializado por getcontext() previamente. Quando o contexto é retomado utilizando-se setcontext() ou swapcontext(), a execução do programa continua chamando a função func() passando como argumentos os argumentos que seguem argc na função makecontext().
+
+\section{ucontext\_t.h}
+\subsection{ContextPong.uc\_stack.ss\_sp}
+Espaço de memória alocado para o contexto.
 
 
-\section*{3. Explicar cada linha do código de pingpong.c que chame uma dessas funções ou que manipule estruturas do tipo ucontext\_t .}
+\subsection{ContextPong.uc\_stack.ss\_size}
+Tamanho do espaço de memória alocado para o contexto.
+
+
+\subsection{ContextPong.uc\_stack.ss\_flags}
+É uma variável utilizada para distinguir os casos em que a função getcontext() retorna valores.
+
+
+\subsection{ContextPong.uc\_link}
+Ponteiro para o contexto.
+
+
+\section*{3. Explicar cada linha do código de contexts.c que chame uma dessas funções ou que manipule estruturas do tipo ucontext\_t .}
 
 \begin{table}[H]
 	\centering
@@ -135,12 +191,18 @@ aloca espaço para stack
 
 \section*{4. Desenhar o diagrama de tempo da execução}
 
-\begin{figure}[H]
-	\begin{center}
-		\fbox{\includegraphics[width=\textwidth]{files/diagrama.png}} % Include the image 
-		%\caption{Exorbitante}
-		\label{img:diag}
-	\end{center}
+\begin{figure}[H]
+
+	\begin{center}
+
+		\fbox{\includegraphics[width=\textwidth]{files/diagrama.png}} % Include the image 
+
+		%\caption{Exorbitante}
+
+		\label{img:diag}
+
+	\end{center}
+
 \end{figure}
 
 \end{document}
