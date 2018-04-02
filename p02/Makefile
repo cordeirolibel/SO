@@ -1,4 +1,4 @@
-all: clean clean_out output clean
+all: clean_out output clean
 
 output: pingpong-tasks1.o pingpong-tasks2.o pingpong-tasks3.o pingpong.o
 	gcc pingpong-tasks3.o pingpong.o -o output
@@ -17,6 +17,7 @@ pingpong.o: pingpong.c pingpong.h datatypes.h
 
 clean_out:
 	rm -rf output
+	rm -rf *.o
 
 clean:
 	rm -rf *.o
