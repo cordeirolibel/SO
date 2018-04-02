@@ -7,8 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
-#include "datatypes.h"		// estruturas de dados necessárias
+//#include "datatypes.h"		// estruturas de dados necessárias
 #include "pingpong.h"
+//#include "../p00/queue.h"
 
 #define STACKSIZE 32768		/* tamanho de pilha das threads */
 
@@ -17,7 +18,10 @@
 
 // Estrutura que define uma tarefa main
 task_t *tk_main;
+task_t *tk_dispatcher;
 task_t *tk_atual;
+task_t *queue_tks;
+
 ucontext_t ct_main;
 
 int id_tasks;
@@ -41,8 +45,10 @@ void pingpong_init () {
 
 	//id de tarefas inicia em 0
 	id_tasks = 0;
+	queue_tks = NULL;
 
-	//tk_aux = NULL;
+	//tarefa dispatcher
+	task_create(tk_dispatcher,dispatcher_body,NULL);
 
 	//Referencia para task atual
 	tk_atual = tk_main;
@@ -91,11 +97,14 @@ int task_create (task_t *task,			// descritor da nova tarefa
 
 // alterna a execução para a tarefa indicada
 int task_switch(task_t *task) {
+
 	task_t *tk_aux;
 	int result = 0;
+
 	tk_aux = tk_atual;
 	tk_atual = task;
 	result = swapcontext(tk_aux->context, tk_atual->context); // swapcontex retorna 0 se ok ou -1 se der erro.
+
 	return result;
 }
 
@@ -120,6 +129,27 @@ int task_id ()
 	return tk_atual->tid;
 }
 
+void dispatcher_body (void * arg){ // dispatcher é uma tarefa
+	task_t *next;
+
+	//numero de tarefas na fila
+	int userTasks = queue_size ((queue_t*) queue_tks);
+
+	while ( userTasks > 0 )	{
+		next = scheduler() ; // scheduler é uma função
+		if (next){
+			//... // ações antes de lançar a tarefa "next", se houverem
+			task_switch (next) ; // transfere controle para a tarefa "next"
+			//... // ações após retornar da tarefa "next", se houverem
+		}
+	}
+	task_exit(0) ; // encerra a tarefa dispatcher
+}
+
+task_t* scheduler(){
+	return queue_tks;
+}
+
 // suspende uma tarefa, retirando-a de sua fila atual, adicionando-a à fila
 // queue e mudando seu estado para "suspensa"; usa a tarefa atual se task==NULL
 void task_suspend (task_t *task, task_t **queue) ;
@@ -133,7 +163,10 @@ void task_resume (task_t *task) ;
 
 // libera o processador para a próxima tarefa, retornando à fila de tarefas
 // prontas ("ready queue")
-void task_yield () ;
+void task_yield () {
+	queue_append ((queue_t **) &queue_tks, (queue_t*) tk_atual) ;
+	task_switch(tk_dispatcher);
+}
 
 // define a prioridade estática de uma tarefa (ou a tarefa atual)
 void task_setprio (task_t *task, int prio) ;
