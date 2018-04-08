@@ -48,7 +48,7 @@ void pingpong_init () {
 	queue_tks = NULL;
 
 	//tarefa dispatcher
-	task_create(tk_dispatcher,dispatcher_body,NULL);
+	task_create(tk_dispatcher,(void*)dispatcher_body,NULL);
 
 	//Referencia para task atual
 	tk_atual = tk_main;
@@ -63,6 +63,9 @@ void pingpong_init () {
 int task_create (task_t *task,			// descritor da nova tarefa
                  void (*start_func)(void *),	// funcao corpo da tarefa
                  void *arg) {			// argumentos para a tarefa
+	
+	//criando task
+	task = malloc(sizeof(*task));
 
 	// Crianto contexto
 	ucontext_t* context = malloc(sizeof(*context));
@@ -82,13 +85,31 @@ int task_create (task_t *task,			// descritor da nova tarefa
 		exit (1);
 	}
 
-	//ajusta id
+	// Ajusta id
 	id_tasks++;
 	task->tid = id_tasks;
+
+	// Ajusta contexto de task
 	task->context = context;
+
+	// Ajusta ponteiros de fila
+	task->next = NULL;
+	task->prev = NULL;
+
+	printf("task create\n");
 
 	// ajusta alguns valores internos do contexto salvo em context
 	makecontext (context, (void*)(*start_func), 1, arg);
+
+	// Se estiver criando o dispatcher, retorna 0 e terminar task_create.
+	if (task == tk_dispatcher)
+	{
+		return 0;
+	}
+	else // Se não coloca tarefas na fila de prontas
+	{
+		queue_append((queue_t**) &queue_tks, (queue_t*) task);
+	}
 
 	return id_tasks;
 }
@@ -132,14 +153,22 @@ int task_id ()
 void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 	task_t *next;
 
+	tk_dispatcher->next = NULL;
+	tk_dispatcher->prev = NULL;
+
+	printf("oi\n");
+
 	//numero de tarefas na fila
 	int userTasks = queue_size ((queue_t*) queue_tks);
+	printf("%d\n", userTasks );
 
 	while ( userTasks > 0 )	{
 		next = scheduler() ; // scheduler é uma função
 		if (next){
 			//... // ações antes de lançar a tarefa "next", se houverem
+
 			task_switch (next) ; // transfere controle para a tarefa "next"
+
 			//... // ações após retornar da tarefa "next", se houverem
 		}
 	}
@@ -164,8 +193,12 @@ void task_resume (task_t *task) ;
 // libera o processador para a próxima tarefa, retornando à fila de tarefas
 // prontas ("ready queue")
 void task_yield () {
-	queue_append ((queue_t **) &queue_tks, (queue_t*) tk_atual) ;
-	task_switch(tk_dispatcher);
+	if (tk_dispatcher != tk_atual)
+	{
+		queue_append ((queue_t **) &queue_tks, (queue_t*) tk_atual) ;
+		task_switch(tk_dispatcher);
+	}
+	
 }
 
 // define a prioridade estática de uma tarefa (ou a tarefa atual)
