@@ -16,7 +16,7 @@ void Body (void * arg)
    for (i=0; i<4; i++)
    {
       printf ("%s %d\n", (char *) arg, i) ;
-      printf("%d\n", i);
+      //printf("%d\n", i);
       task_yield ();
    }
    printf ("%s FIM\n", (char *) arg) ;
@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
    task_create (&Ping, Body, "            Ping") ;
    task_create (&Pong, Body, "                Pong") ;
    task_create (&Pung, Body, "                    Pung") ;
-   printf("debug\n");
+   //printf("debug\n");
    task_yield () ;
 
    printf ("Main FIM\n");

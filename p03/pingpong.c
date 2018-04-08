@@ -29,6 +29,12 @@ int id_tasks;
 //==============================================================
 // Funções gerais ==============================================
 
+//Simples print para debug
+void test(int num){
+	printf("Teste %d\n",num);
+	fflush(stdout);
+}
+
 // Inicializa o sistema operacional; deve ser chamada no inicio do main()
 void pingpong_init () {
 
@@ -48,6 +54,7 @@ void pingpong_init () {
 	queue_tks = NULL;
 
 	//tarefa dispatcher
+	tk_dispatcher = malloc(sizeof(*tk_dispatcher));
 	task_create(tk_dispatcher,(void*)dispatcher_body,NULL);
 
 	//Referencia para task atual
@@ -63,9 +70,6 @@ void pingpong_init () {
 int task_create (task_t *task,			// descritor da nova tarefa
                  void (*start_func)(void *),	// funcao corpo da tarefa
                  void *arg) {			// argumentos para a tarefa
-	
-	//criando task
-	task = malloc(sizeof(*task));
 
 	// Crianto contexto
 	ucontext_t* context = malloc(sizeof(*context));
@@ -96,20 +100,15 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	task->next = NULL;
 	task->prev = NULL;
 
-	printf("task create\n");
-
 	// ajusta alguns valores internos do contexto salvo em context
 	makecontext (context, (void*)(*start_func), 1, arg);
 
 	// Se estiver criando o dispatcher, retorna 0 e terminar task_create.
 	if (task == tk_dispatcher)
-	{
 		return 0;
-	}
+	
 	else // Se não coloca tarefas na fila de prontas
-	{
 		queue_append((queue_t**) &queue_tks, (queue_t*) task);
-	}
 
 	return id_tasks;
 }
@@ -133,12 +132,19 @@ int task_switch(task_t *task) {
 // Termina a tarefa corrente, indicando um valor de status encerramento
 void task_exit (int exitCode) {
 
-	// controle a tarefa main
-	task_switch(tk_main);
-
 	// desalocar
-	free(tk_main->context);
-	free(tk_main);
+	free(tk_atual->context);
+
+	//====verifica se existem tarefas na fila de prontas
+	//numero de tarefas na fila
+	int userTasks = queue_size ((queue_t*) queue_tks);
+	if (userTasks > 0)
+		// controle ao dispatcher
+		task_switch(tk_dispatcher);
+
+	else
+		// controle a tarefa main
+		task_switch(tk_main);
 
 	return;
 }
@@ -153,14 +159,12 @@ int task_id ()
 void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 	task_t *next;
 
-	tk_dispatcher->next = NULL;
-	tk_dispatcher->prev = NULL;
+	//tk_dispatcher->next = NULL;
+	//tk_dispatcher->prev = NULL;
 
-	printf("oi\n");
 
 	//numero de tarefas na fila
 	int userTasks = queue_size ((queue_t*) queue_tks);
-	printf("%d\n", userTasks );
 
 	while ( userTasks > 0 )	{
 		next = scheduler() ; // scheduler é uma função
@@ -175,8 +179,9 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 	task_exit(0) ; // encerra a tarefa dispatcher
 }
 
+//remove o primeiro elemento da fila e retorna o elemento removido 
 task_t* scheduler(){
-	return queue_tks;
+	return (task_t*) queue_remove ((queue_t**) &queue_tks, (queue_t*) queue_tks);
 }
 
 // suspende uma tarefa, retirando-a de sua fila atual, adicionando-a à fila
@@ -193,12 +198,13 @@ void task_resume (task_t *task) ;
 // libera o processador para a próxima tarefa, retornando à fila de tarefas
 // prontas ("ready queue")
 void task_yield () {
-	if (tk_dispatcher != tk_atual)
+	if ((tk_dispatcher != tk_atual) && (tk_atual != tk_main))
 	{
 		queue_append ((queue_t **) &queue_tks, (queue_t*) tk_atual) ;
 		task_switch(tk_dispatcher);
 	}
-	
+	else
+		task_switch(tk_dispatcher);
 }
 
 // define a prioridade estática de uma tarefa (ou a tarefa atual)
