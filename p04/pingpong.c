@@ -113,6 +113,11 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	else // Se não coloca tarefas na fila de prontas
 		queue_append((queue_t**) &queue_tks, (queue_t*) task);
 
+
+	#ifdef DEBUG
+	printf ("task_create: criou tarefa %d\n", task->tid) ;
+	#endif
+
 	return id_tasks;
 }
 

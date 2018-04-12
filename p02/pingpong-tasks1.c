@@ -7,6 +7,8 @@
 #warning Este codigo foi planejado para ambientes UNIX (LInux, *BSD, MacOS). A compilacao e execucao em outros ambientes e responsabilidade do usuario.
 #endif
 
+
+
 task_t Ping, Pong ;
 
 void BodyPing (void * arg)

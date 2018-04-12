@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include "datatypes.h"		// estruturas de dados necessárias
-#include "pingpong.h"
 
 #define STACKSIZE 32768		/* tamanho de pilha das threads */
 
@@ -83,6 +82,10 @@ int task_create (task_t *task,			// descritor da nova tarefa
 
 	// ajusta alguns valores internos do contexto salvo em context
 	makecontext (context, (void*)(*start_func), 1, arg);
+
+	#ifdef DEBUG
+	printf ("task_create: criou tarefa %d\n", task->tid) ;
+	#endif
 
 	return id_tasks;
 }
