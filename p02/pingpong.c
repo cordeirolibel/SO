@@ -99,6 +99,11 @@ int task_switch(task_t *task) {
 	tk_aux = tk_atual;
 	tk_atual = task;
 	result = swapcontext(tk_aux->context, tk_atual->context); // swapcontex retorna 0 se ok ou -1 se der erro.
+
+	#ifdef DEBUG
+	printf ("task_switch: trocando contexto %d -> %d\n", tk_aux->tid, tk_atual->tid);
+	#endif
+
 	return result;
 }
 
@@ -106,12 +111,12 @@ int task_switch(task_t *task) {
 // Termina a tarefa corrente, indicando um valor de status encerramento
 void task_exit (int exitCode) {
 
-	// controle a tarefa main
-	task_switch(tk_main);
-
 	// desalocar
-	free(tk_main->context);
-	free(tk_main);
+	free(tk_atual->context);
+
+	#ifdef DEBUG
+	printf ("task_exit: tarefa %d sendo encerrada\n", tk_atual->tid);
+	#endif
 
 	return;
 }
