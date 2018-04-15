@@ -10,8 +10,11 @@
 //#include "datatypes.h"		// estruturas de dados necessárias
 #include "pingpong.h"
 //#include "../p00/queue.h"
+#include <signal.h>
+#include <sys/time.h>
 
 #define STACKSIZE 32768		/* tamanho de pilha das threads */
+#define QUANTUM 20  /* 1 Quantum = 20 ticks */
 
 //==============================================================
 // Variaveis globais ===========================================
@@ -26,35 +29,52 @@ ucontext_t ct_main;
 
 int id_tasks;
 
+int ticks;
+
+// estrutura que define um tratador de sinal (deve ser global ou static)
+struct sigaction action ;
+
 // estrutura de inicialização to timer
 struct itimerval timer;
-
 
 //==============================================================
 // Funções gerais ==============================================
 
-//Simples print para debug
+//Simples print para testes
 void test(int num){
 	printf("Teste %d\n",num);
 	fflush(stdout);
 }
+
+void interrupt_handler(int signum){
+
+	//tarefas do sistema nao sao interrompidas
+	if (tk_atual->sys_tf == 1)
+		return;
+
+	// Quantum
+	if (ticks == 0){
+
+		//print DEBUG
+		#ifdef DEBUG
+		printf ("Quantum \n");
+		fflush(stdout);
+		#endif
+
+		//acabou o tempo da tarefa
+		task_yield ();
+	}
+	else
+		ticks-=1;
+	return;
+}
+
 
 // Inicializa o sistema operacional; deve ser chamada no inicio do main()
 void pingpong_init () {
 
 	// desativa o buffer da saida padrao (stdout), usado pela função printf 
 	setvbuf (stdout, 0, _IONBF, 0);
-
-	// ajusta valores do temporizador
-  	timer.it_value.tv_usec = 0 ;      // primeiro disparo, em micro-segundos
-  	timer.it_interval.tv_usec = 0 ;   // disparos subsequentes, em micro-segundos
-
-  	// arma o temporizador ITIMER_REAL (vide man setitimer)
-  	if (setitimer (ITIMER_REAL, &timer, 0) < 0)
-  	{
-    	perror ("Erro em setitimer: ") ;
-    	exit (1) ;
-  	}
 
 	// ===> Criando tarefa main
 	// C++  >> task_t* tk_main = new task_t;
@@ -71,12 +91,43 @@ void pingpong_init () {
 	//tarefa dispatcher
 	tk_dispatcher = malloc(sizeof(*tk_dispatcher));
 	task_create(tk_dispatcher,(void*)dispatcher_body,NULL);
+	tk_dispatcher->sys_tf = 1;
 
 	//Referencia para task atual
 	tk_atual = tk_main;
 
+	///==============================Timer init
+	/// registra a a��o para o sinal de timer SIGALRM
+	action.sa_handler = interrupt_handler ;
+	sigemptyset (&action.sa_mask) ;
+	action.sa_flags = 0 ;
+	if (sigaction (SIGALRM, &action, 0) < 0){
+		perror ("Erro em sigaction: ") ;
+		exit (1) ;
+	}
+
+	// ajusta valores do temporizador
+	timer.it_value.tv_usec = 1000 ;      // primeiro disparo, em micro-segundos
+	timer.it_value.tv_sec  = 0 ;      // primeiro disparo, em segundos
+	timer.it_interval.tv_usec = 1000 ;   // disparos subsequentes, em micro-segundos
+	timer.it_interval.tv_sec  = 0 ;   // disparos subsequentes, em segundos
+
+	// arma o temporizador ITIMER_REAL (vide man setitimer)
+	if (setitimer (ITIMER_REAL, &timer, 0) < 0)	{
+		perror ("Erro em setitimer: ") ;
+		exit (1) ;
+	}
+	///==============================
+
+	#ifdef DEBUG
+	printf ("pingpong init conlcuido.\n");
+	fflush(stdout);
+	#endif
+
 	return;
 }
+
+
 
 //==============================================================
 // Gerência de tarefas =========================================
@@ -128,9 +179,12 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	else // Se não coloca tarefas na fila de prontas
 		queue_append((queue_t**) &queue_tks, (queue_t*) task);
 
+	//tarefa do usuario
+	task->sys_tf = 0;
 
 	#ifdef DEBUG
 	printf ("task_create: criou tarefa %d\n", task->tid) ;
+	fflush(stdout);
 	#endif
 
 	return id_tasks;
@@ -150,6 +204,7 @@ int task_switch(task_t *task) {
 
 	#ifdef DEBUG
 	printf ("task_switch: trocando contexto %d -> %d\n", tk_aux->tid, tk_atual->tid);
+	fflush(stdout);
 	#endif
 
 	return result;
@@ -175,6 +230,7 @@ void task_exit (int exitCode) {
 
 	#ifdef DEBUG
 	printf ("task_exit: tarefa %d sendo encerrada\n", tk_atual->tid);
+	fflush(stdout);
 	#endif
 
 	return;
@@ -199,7 +255,7 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 		next = scheduler() ; // scheduler é uma função
 		if (next){
 			//... // ações antes de lançar a tarefa "next", se houverem
-
+			ticks = QUANTUM;
 			task_switch (next) ; // transfere controle para a tarefa "next"
 
 			//... // ações após retornar da tarefa "next", se houverem

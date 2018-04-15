@@ -11,7 +11,6 @@ pingpong.o: pingpong.c pingpong.h datatypes.h
 
 queue.o: ../p00/queue.c ../p00/queue.h
 	gcc -c ../p00/queue.c
-	echo ola
 
 clean_out:
 	rm -rf output

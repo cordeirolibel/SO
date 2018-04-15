@@ -7,6 +7,8 @@
 #warning Este codigo foi planejado para ambientes UNIX (LInux, *BSD, MacOS). A compilacao e execucao em outros ambientes e responsabilidade do usuario.
 #endif
 
+//#define DEBUG
+
 task_t Pang, Peng, Ping, Pong, Pung ;
 
 void Body (void * arg)

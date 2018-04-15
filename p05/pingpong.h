@@ -11,6 +11,7 @@
 
 #include "datatypes.h"		// estruturas de dados necessárias
 #include "../p00/queue.h"
+//#define DEBUG
 
 // funções gerais ==============================================================
 

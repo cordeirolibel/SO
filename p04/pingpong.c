@@ -60,6 +60,11 @@ void pingpong_init () {
 	//Referencia para task atual
 	tk_atual = tk_main;
 
+	//print debug
+	#ifdef DEBUG
+	printf ("pingpong init conlcuido.\n");
+	#endif
+	
 	return;
 }
 

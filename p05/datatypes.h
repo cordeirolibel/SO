@@ -23,6 +23,9 @@ typedef struct task_t
 	int statPrio;
 	int dinPrio;
 
+	// tarefa do sistema ou do usuario 
+	int sys_tf;
+	
 } task_t ;
 
 // estrutura que define um semáforo
