@@ -50,16 +50,13 @@
 %	DOCUMENT INFORMATION
 %----------------------------------------------------------------------------------------
 
-\title{Trocas de Contexto} % Title
+\title{Trocas de Contexto - Relatório p01} % Title
 \author{Gabriel Souza e Silva \and Gustavo Cordeiro Libel} % Author name
 \date{Abril de 2018} % Date for the report
 
 \begin{document}
 
 \maketitle % Insert the title, author and date
-\begin{center}
-	Relatório p01
-\end{center}
 
 %----------------------------------------------------------------------------------------
 %	SECTION 1
@@ -98,42 +95,7 @@ Pong FIM
 
 Main FIM
 
-\textbf{\large ucontext:}
-
-The $<$ucontext.h$>$ header defines the ucontext\_t type as a structure that includes at least the following members:
-
-\begin{table}[H]
-	\centering
-	%\caption{My caption}
-	\label{my-label}
-	\begin{tabular}{|l|l|l|}
-		\hline 
-		ucontext\_t & *uc\_link    & pointer to the context that will be resumed when this context returns \\
-		sigset\_t   & uc\_sigmask  & the set of signals that are blocked when this context is active       \\
-		stack\_t    & uc\_stack    & the stack used by this context                                        \\
-		mcontext\_t & uc\_mcontext & a machine-specific representation of the saved context          \\
-		\hline      
-	\end{tabular}
-\end{table}
-
-
-\textbf{\large BodyPing/BodyPong:}
-
-print arg e iterador
-
-troca de contexto => Salva o contexto atual em ContextPing e restaura o contexto de ContextPong
-
-faz isso 4 vezes
-
-e troca contexto uma ultima vez
-
-\textbf{\large Main:}
-
-pega contexto
-aloca espaço para stack
-
-
-\section{Chamadas de sistema POSIX para manipulação de contextos.}
+\section{Chamadas de sistema POSIX para manipulação de contextos}
 
 	\subsection{int getcontext(ucontext\_t *ucp)}
 	A chamada de sistema getcontext é utilizada para receber o contexto em execução no momento, armazenando-o na estrutura apontada por ucp.
@@ -151,7 +113,7 @@ aloca espaço para stack
 	\subsection{void makecontext(ucontext\_t *ucp, void(*func)(), int argc, ...)}
 	A função makecontext altera o conteúdo especificado por ucp, que foi inicializado por getcontext() previamente. Quando o contexto é retomado utilizando-se setcontext() ou swapcontext(), a execução do programa continua chamando a função func() passando como argumentos os argumentos que seguem argc na função makecontext().
 
-\section{ucontext\_t.h}
+\section{Estrutura ucontext\_t}
 \subsection{ContextPong.uc\_stack.ss\_sp}
 Espaço de memória alocado para o contexto.
 
@@ -168,7 +130,7 @@ Tamanho do espaço de memória alocado para o contexto.
 Ponteiro para o contexto.
 
 
-\section*{3. Explicar cada linha do código de contexts.c que chame uma dessas funções ou que manipule estruturas do tipo ucontext\_t .}
+\section{Explicação de cada linha do código de contexts.c que chame uma dessas funções ou que manipule estruturas do tipo ucontext\_t}
 
 \begin{table}[H]
 	\centering
@@ -189,7 +151,7 @@ Ponteiro para o contexto.
 	\end{tabular}
 \end{table}
 
-\section*{4. Desenhar o diagrama de tempo da execução}
+\section{Diagrama de tempo da execução}
 
 \begin{figure}[H]
 
