@@ -29,8 +29,8 @@ ucontext_t ct_main;
 
 int id_tasks;
 
-int ticks;
-unsigned int clkTicks;
+int ticks;//ticks para a tarefa (quantum)
+unsigned int clkTicks; //ticks desde o inicio
 
 
 // estrutura que define um tratador de sinal (deve ser global ou static)
@@ -42,13 +42,11 @@ struct itimerval timer;
 //==============================================================
 // Funções gerais ==============================================
 
-//Simples print para testes
-void test(int num){
-	printf("Teste %d\n",num);
-	fflush(stdout);
-}
-
+//interrupção de tempo 
 void interrupt_handler(int signum){
+
+	clkTicks += 1;
+	tk_atual->tProcessador += 1;
 
 	//tarefas do sistema nao sao interrompidas
 	if (tk_atual->sys_tf == 1)
@@ -69,8 +67,6 @@ void interrupt_handler(int signum){
 	else
 		ticks-=1;
 
-	clkTicks += 1;
-	tk_atual->tProcessador += 1;
 
 	return;
 }
@@ -167,13 +163,12 @@ int task_create (task_t *task,			// descritor da nova tarefa
 		perror ("Erro na criação da pilha: ");
 		exit (1);
 	}
+	// Ajusta contexto de task
+	task->context = context;
 
 	// Ajusta id
 	id_tasks++;
 	task->tid = id_tasks;
-
-	// Ajusta contexto de task
-	task->context = context;
 
 	// Ajusta ponteiros de fila
 	task->next = NULL;
@@ -182,8 +177,6 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	// Tarefa criada com prioridade 0
 	task->statPrio = 0;
 	task->dinPrio = 0;
-
-
 
 	// ajusta alguns valores internos do contexto salvo em context
 	makecontext (context, (void*)(*start_func), 1, arg);
@@ -219,7 +212,7 @@ int task_switch(task_t *task) {
 	task->ativ += 1;
 
 	task_t *tk_aux;
-	int result = 0;
+	int result;
 
 	tk_aux = tk_atual;
 	tk_atual = task;
@@ -239,7 +232,7 @@ void task_exit (int exitCode) {
 	unsigned int tempoExec = systime();
 	tempoExec = tempoExec - tk_atual->tk_inicio;
 
-	printf("Task %d exit: execution time %4d ms, processor time %4d ms, %d activations \n", task_id(), tempoExec, tk_atual->tProcessador, tk_atual->ativ);
+	printf("Task %d exit: execution time %u ms, processor time %u ms, %d activations \n", task_id(), tempoExec, tk_atual->tProcessador, tk_atual->ativ);
 
 	// desalocar
 	free(tk_atual->context);
