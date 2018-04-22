@@ -91,6 +91,7 @@ void pingpong_init () {
 	ucontext_t* ct_main = malloc(sizeof(*ct_main));
 	getcontext(ct_main); // armazena contexto atual em ct_main
 	tk_main->context = ct_main;
+	tk_main->sys_tf = 0;
 
 	//id de tarefas inicia em 0
 	id_tasks = 0;
@@ -238,7 +239,7 @@ void task_exit (int exitCode) {
 	unsigned int tempoExec = systime();
 	tempoExec = tempoExec - tk_atual->tk_inicio;
 
-	printf("Task %d exit: execution time %4d, processor time %4d, %d activations \n", task_id(), tempoExec, tk_atual->tProcessador, tk_atual->ativ);
+	printf("Task %d exit: execution time %4d ms, processor time %4d ms, %d activations \n", task_id(), tempoExec, tk_atual->tProcessador, tk_atual->ativ);
 
 	// desalocar
 	free(tk_atual->context);
@@ -247,7 +248,7 @@ void task_exit (int exitCode) {
 	//numero de tarefas na fila
 	int userTasks = queue_size ((queue_t*) queue_tks);
 
-	if (userTasks > 0)
+	if ((userTasks >= 0) && (tk_atual->tid!=1))
 	{
 		// controle ao dispatcher
 		task_switch(tk_dispatcher);
@@ -285,9 +286,9 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 			//... // ações antes de lançar a tarefa "next", se houverem
 			ticks = QUANTUM;
 			task_switch (next) ; // transfere controle para a tarefa "next"
-
 			//... // ações após retornar da tarefa "next", se houverem
 		}
+		userTasks = queue_size ((queue_t*) queue_tks);
 	}
 
 	task_exit(0) ; // encerra a tarefa dispatcher
