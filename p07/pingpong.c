@@ -44,8 +44,6 @@ struct itimerval timer;
 
 //interrupção de tempo 
 void interrupt_handler(int signum){
-
-
 	//tarefas do sistema nao sao interrompidas
 	if (tk_atual->sys_tf == 1)
 		return;
@@ -75,33 +73,31 @@ void interrupt_handler(int signum){
 
 // Inicializa o sistema operacional; deve ser chamada no inicio do main()
 void pingpong_init () {
-	// Inicializa numero de ticks de relogio
-	clkTicks = 0;
-
 	// desativa o buffer da saida padrao (stdout), usado pela função printf 
 	setvbuf (stdout, 0, _IONBF, 0);
 
+	// Inicializa numero de ticks de relogio
+	clkTicks = 0;
+
 	// ===> Criando tarefa main
 	// C++  >> task_t* tk_main = new task_t;
-	tk_main = malloc(sizeof(*tk_main)); 
+	tk_main = malloc(sizeof(*tk_main));
 	// C++  >> ucontext_t* ct_main = new ct_main;
-	ucontext_t* ct_main = malloc(sizeof(*ct_main));
-	getcontext(ct_main); // armazena contexto atual em ct_main
-	tk_main->context = ct_main;
-	tk_main->sys_tf = 0;
+	//ucontext_t* ct_main = malloc(sizeof(*ct_main));
+	//getcontext(ct_main); // armazena contexto atual em ct_main
+	//tk_main->context = ct_main;
 
 	//id de tarefas inicia em 0
 	id_tasks = 0;
 	queue_tks = NULL;
 
+	task_create(tk_main, NULL, NULL);
+	task_setprio(tk_main, 1);
+
 	//tarefa dispatcher
 	tk_dispatcher = malloc(sizeof(*tk_dispatcher));
 	task_create(tk_dispatcher,(void*)dispatcher_body,NULL);
 	tk_dispatcher->sys_tf = 1;
-
-	tk_dispatcher->tk_inicio = 0;
-	tk_dispatcher->tProcessador = 0;
-	tk_dispatcher->ativ = 0;
 
 	//Referencia para task atual
 	tk_atual = tk_main;
@@ -147,6 +143,11 @@ int task_create (task_t *task,			// descritor da nova tarefa
                  void (*start_func)(void *),	// funcao corpo da tarefa
                  void *arg) {			// argumentos para a tarefa
 
+
+	task->tk_inicio = systime();
+	task->tProcessador = 0;
+	task->ativ = 0;
+
 	// Crianto contexto
 	ucontext_t* context = malloc(sizeof(*context));
 
@@ -167,10 +168,6 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	// Ajusta contexto de task
 	task->context = context;
 
-	// Ajusta id
-	id_tasks++;
-	task->tid = id_tasks;
-
 	// Ajusta ponteiros de fila
 	task->next = NULL;
 	task->prev = NULL;
@@ -179,23 +176,27 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	task->statPrio = 0;
 	task->dinPrio = 0;
 
-	// ajusta alguns valores internos do contexto salvo em context
-	makecontext (context, (void*)(*start_func), 1, arg);
+	// Ajusta id
+	task->tid = id_tasks;
+	id_tasks++;
+
+	if (start_func != NULL)
+	{
+		// ajusta alguns valores internos do contexto salvo em context
+		makecontext (context, (void*)(*start_func), 1, arg);
+	}
 
 	// Se estiver criando o dispatcher, retorna 0 e terminar task_create.
 	if (task == tk_dispatcher)
 	{
 		return 0;
 	}
-	else // Se não coloca tarefas na fila de prontas
+	else if (task != tk_main)// Se não coloca tarefas na fila de prontas
 		queue_append((queue_t**) &queue_tks, (queue_t*) task);
+
 
 	//tarefa do usuario
 	task->sys_tf = 0;
-
-	task->tk_inicio = systime();
-	task->tProcessador = 0;
-	task->ativ = 0;
 
 	#ifdef DEBUG
 	printf ("task_create: criou tarefa %d\n", task->tid) ;
@@ -242,7 +243,7 @@ void task_exit (int exitCode) {
 	//numero de tarefas na fila
 	int userTasks = queue_size ((queue_t*) queue_tks);
 
-	if ((userTasks >= 0) && (tk_atual->tid!=1))
+	if ((userTasks >= 0) && tk_atual != tk_dispatcher)
 	{
 		// controle ao dispatcher
 		task_switch(tk_dispatcher);
@@ -338,6 +339,8 @@ task_t* scheduler(){
 
 	highPrio->dinPrio = highPrio->statPrio;
 
+	//printf("%d\n", highPrio->tid);
+
 	return (task_t*) queue_remove ((queue_t**) &queue_tks, (queue_t*) highPrio);
 }
 
@@ -355,7 +358,7 @@ void task_resume (task_t *task) ;
 // libera o processador para a próxima tarefa, retornando à fila de tarefas
 // prontas ("ready queue")
 void task_yield () {
-	if ((tk_dispatcher != tk_atual) && (tk_atual != tk_main))
+	if ((tk_dispatcher != tk_atual))
 	{
 		queue_append ((queue_t **) &queue_tks, (queue_t*) tk_atual) ;
 		task_switch(tk_dispatcher);
