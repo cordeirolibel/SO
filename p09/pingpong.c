@@ -24,6 +24,7 @@ task_t *tk_main;
 task_t *tk_dispatcher;
 task_t *tk_atual;
 task_t *queue_tks;
+task_t *queue_sleep;
 
 ucontext_t ct_main;
 
@@ -91,6 +92,9 @@ void pingpong_init () {
 	//id de tarefas inicia em 0
 	id_tasks = 0;
 	queue_tks = NULL;
+
+	//Inicia fila de tarefas adormecidas
+	queue_sleep = NULL;
 
 	task_create(tk_main, NULL, NULL);
 	//task_setprio(tk_main, 1);//<<<<========================================
@@ -289,7 +293,25 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 	//numero de tarefas na fila
 	int userTasks = queue_size ((queue_t*) queue_tks);
 
-	while ( userTasks > 0 )	{
+	while ( userTasks > 0 )	
+	{
+		// Ponteiro auxiliar para manipulação de elementos na fila de adormecidas.
+		task_t *alarmClk = queue_sleep;
+
+		// Percorre a fila de adormecidas e procura quais devem ser acordadas
+		do
+		{
+			if (alarmClk->wakeUp == clkTicks)
+			{
+				//Remove a tarefa da fila de prontas
+				queue_remove ((queue_t**) queue_sleep, (queue_t*) tk_atual);
+
+				//Adiciona a tarefa na fila de tarefas adormecidas
+				queue_append((queue_t**) queue_tks, (queue_t*) tk_atual);
+		}
+		alarmClk = alarmClk->next;
+		} while(alarmClk != queue_tks);
+
 		next = scheduler() ; // scheduler é uma função
 		if (next){
 			//... // ações antes de lançar a tarefa "next", se houverem
@@ -447,7 +469,19 @@ int task_join (task_t *task) {
 // Operações de gestão do tempo ================================
 
 // suspende a tarefa corrente por t segundos
-void task_sleep (int t) ;
+void task_sleep (int t)
+{
+	//Remove a tarefa da fila de prontas
+	queue_remove ((queue_t**) queue_tks, (queue_t*) tk_atual);
+
+	//Adiciona a tarefa na fila de tarefas adormecidas
+	queue_append((queue_t**) queue_sleep, (queue_t*) tk_atual);
+
+	//Tempo para ser acordada
+	tk_atual->wakeUp = clkTicks + t;
+
+	task_switch(tk_dispatcher);
+}
 
 // retorna o relógio atual (em milisegundos)
 unsigned int systime ()
