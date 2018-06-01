@@ -47,8 +47,11 @@ struct itimerval timer;
 //interrupção de tempo 
 void interrupt_handler(int signum){
 	//tarefas do sistema nao sao interrompidas
-	if (tk_atual->sys_tf == 1)
+	if (tk_atual->sys_tf == 1){
+		clkTicks += 1;
+		tk_atual->tProcessador += 1;
 		return;
+	}
 
 	// Quantum
 	if (ticks == 0){
@@ -184,6 +187,8 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	task->statPrio = 0;
 	task->dinPrio = 0;
 
+	task->wakeUp = 0;
+
 	// Ajusta id
 	task->tid = id_tasks;
 	id_tasks++;
@@ -249,6 +254,7 @@ void task_exit (int exitCode) {
 	task_t *queue = tk_atual->queue_tks_susp;
 	int userTasks = queue_size ((queue_t*) queue);
 	while ( userTasks > 0 )	{
+
 		task_resume (queue, &queue);
 		userTasks = queue_size ((queue_t*) queue);
 	}
@@ -292,34 +298,51 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 
 	//numero de tarefas na fila
 	int userTasks = queue_size ((queue_t*) queue_tks);
+	int userTasks_sleep = queue_size ((queue_t*) queue_sleep);
 
-	while ( userTasks > 0 )	
+	while ( userTasks > 0 || userTasks_sleep>0 )	
 	{
 		// Ponteiro auxiliar para manipulação de elementos na fila de adormecidas.
 		task_t *alarmClk = queue_sleep;
 
+		int n_sleep_tk = queue_size ((queue_t*) queue_sleep);
+
 		// Percorre a fila de adormecidas e procura quais devem ser acordadas
-		do
-		{
-			if (alarmClk->wakeUp == clkTicks)
-			{
-				//Remove a tarefa da fila de prontas
-				queue_remove ((queue_t**) queue_sleep, (queue_t*) tk_atual);
+		while(n_sleep_tk--){
+			//Salva o proximo
+			next = alarmClk->next;
 
-				//Adiciona a tarefa na fila de tarefas adormecidas
-				queue_append((queue_t**) queue_tks, (queue_t*) tk_atual);
-		}
-		alarmClk = alarmClk->next;
-		} while(alarmClk != queue_tks);
+			if (alarmClk->wakeUp <= clkTicks)
+			{	
 
-		next = scheduler() ; // scheduler é uma função
-		if (next){
-			//... // ações antes de lançar a tarefa "next", se houverem
-			ticks = QUANTUM;
-			task_switch (next) ; // transfere controle para a tarefa "next"
-			//... // ações após retornar da tarefa "next", se houverem
+				alarmClk->wakeUp = 0;
+
+				//Remove a tarefa da fila de tarefas adormecidas
+				queue_remove ((queue_t**) &queue_sleep, (queue_t*) alarmClk);
+
+				//Adiciona a tarefa na fila de prontas
+				queue_append((queue_t**) &queue_tks, (queue_t*) alarmClk);
+
+				userTasks = queue_size ((queue_t*) queue_tks);
+			}
+			alarmClk = next;
+			
+		} 
+
+		//se tiver uma tarefa na fila de prontas
+		if (userTasks>0){
+			next = scheduler() ; // scheduler é uma função
+			
+			if (next){
+				//... // ações antes de lançar a tarefa "next", se houverem
+				ticks = QUANTUM;
+				task_switch (next) ; // transfere controle para a tarefa "next"
+				//... // ações após retornar da tarefa "next", se houverem
+			}
 		}
+
 		userTasks = queue_size ((queue_t*) queue_tks);
+		userTasks_sleep = queue_size ((queue_t*) queue_sleep);
 	}
 
 	task_exit(0) ; // encerra a tarefa dispatcher
@@ -384,8 +407,10 @@ task_t* scheduler(){
 // queue e mudando seu estado para "suspensa"; usa a tarefa atual se task==NULL
 void task_suspend (task_t *task, task_t **queue) {
 
-	//removendo da fila prontas
-	//queue_remove ((queue_t**) &queue_tks, (queue_t*) task);
+	//o elemento esta em outra fila (sleep)
+	if (task->next != NULL || task->prev != NULL){
+		queue_remove ((queue_t**) &queue_sleep, (queue_t*) task);
+	}
 
 	//adicionando a fila de suspensao
 	queue_append((queue_t**) queue, (queue_t*) task);
@@ -400,8 +425,14 @@ void task_resume (task_t *task, task_t **queue) {
 	//removendo da fila suspensao
 	queue_remove ((queue_t**) queue, (queue_t*) task);
 
-	//adicionando a fila de prontas
-	queue_append((queue_t**) &queue_tks, (queue_t*) task);
+	//sleep
+	if (task->wakeUp != 0){
+		//adicionando a fila de sleep
+		queue_append((queue_t**) &queue_sleep, (queue_t*) task);
+	}
+	else{
+		//adicionando a fila de prontas
+		queue_append((queue_t**) &queue_tks, (queue_t*) task);}
 
 }
 
@@ -471,15 +502,15 @@ int task_join (task_t *task) {
 // suspende a tarefa corrente por t segundos
 void task_sleep (int t)
 {
+	//Tempo para ser acordada
+	tk_atual->wakeUp = clkTicks + t*1000;
+
 	//Remove a tarefa da fila de prontas
-	queue_remove ((queue_t**) queue_tks, (queue_t*) tk_atual);
+	//queue_remove ((queue_t**) &queue_tks, (queue_t*) tk_atual);
 
 	//Adiciona a tarefa na fila de tarefas adormecidas
-	queue_append((queue_t**) queue_sleep, (queue_t*) tk_atual);
-
-	//Tempo para ser acordada
-	tk_atual->wakeUp = clkTicks + t;
-
+	queue_append((queue_t**) &queue_sleep, (queue_t*) tk_atual);
+	
 	task_switch(tk_dispatcher);
 }
 

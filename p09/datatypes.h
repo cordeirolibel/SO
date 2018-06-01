@@ -23,6 +23,9 @@ typedef struct task_t
 	// contexto 
 	ucontext_t *context;
 
+	// para a funcao task_sleep
+	int wakeUp;
+
 	// Prioridade
 	int statPrio;
 	int dinPrio;
