@@ -526,16 +526,71 @@ unsigned int systime ()
 // semáforos
 
 // cria um semáforo com valor inicial "value"
-int sem_create (semaphore_t *s, int value) ;
+int sem_create (semaphore_t *s, int value)
+{
+	s->counter = value;
+
+	//fila de suspensas
+	s->queue_tks_susp = NULL;
+}
 
 // requisita o semáforo
-int sem_down (semaphore_t *s) ;
+int sem_down (semaphore_t *s)
+{
+	if (s == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		if (s->counter >= 0)
+		{
+			s->counter = s->counter - 1;
+			
+			// Tarefa continua sua execução
+
+			return 0;
+		}
+		else
+		{
+			//Tarefa vai para a fila de suspensas do semaforo
+			task_suspend(tk_atual, &s->queue_tks_susp);
+			sem_down(s);
+		}
+	}
+}
 
 // libera o semáforo
-int sem_up (semaphore_t *s) ;
+int sem_up (semaphore_t *s)
+{
+	if (s == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		s->counter = s->counter + 1;
+
+		if(s->queue_tks_susp->next != NULL)
+		{
+			task_resume(s->queue_tks_susp, &s->queue_tks_susp);
+			return 0;
+		}
+	}
+}
 
 // destroi o semáforo, liberando as tarefas bloqueadas
-int sem_destroy (semaphore_t *s) ;
+int sem_destroy (semaphore_t *s)
+{
+	// Ponteiro auxiliar para manipulação de elementos.
+	task_t* aux = s->queue_tks_susp;
+	// Percorre a fila de suspensas e liberar tarefas
+	do
+	{
+		task_resume(aux, &s->queue_tks_susp);
+		aux = aux->next;
+	} while(aux != s->queue_tks_susp);
+}
 
 // mutexes
 
