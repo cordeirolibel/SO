@@ -432,7 +432,8 @@ void task_resume (task_t *task, task_t **queue) {
 	}
 	else{
 		//adicionando a fila de prontas
-		queue_append((queue_t**) &queue_tks, (queue_t*) task);}
+		queue_append((queue_t**) &queue_tks, (queue_t*) task);
+	}
 
 }
 
@@ -537,25 +538,26 @@ int sem_create (semaphore_t *s, int value)
 // requisita o semáforo
 int sem_down (semaphore_t *s)
 {
+	tk_atual->sys_tf = 1;
 	if (s == NULL)
 	{
 		return -1;
 	}
 	else
 	{
-		if (s->counter >= 0)
+		s->counter = s->counter - 1;
+		if (s->counter < 0)
 		{
-			s->counter = s->counter - 1;
-			
-			// Tarefa continua sua execução
-
-			return 0;
+			tk_atual->sys_tf = 0;
+			//Tarefa vai para a fila de suspensas do semaforo
+			queue_append((queue_t**) &s->queue_tks_susp, (queue_t*) tk_atual);
+			task_switch(tk_dispatcher);
+			return sem_down(s);
 		}
 		else
 		{
-			//Tarefa vai para a fila de suspensas do semaforo
-			task_suspend(tk_atual, &s->queue_tks_susp);
-			sem_down(s);
+			tk_atual->sys_tf = 0;
+			return 0;
 		}
 	}
 }
@@ -563,6 +565,7 @@ int sem_down (semaphore_t *s)
 // libera o semáforo
 int sem_up (semaphore_t *s)
 {
+	tk_atual->sys_tf = 1;
 	if (s == NULL)
 	{
 		return -1;
@@ -570,26 +573,50 @@ int sem_up (semaphore_t *s)
 	else
 	{
 		s->counter = s->counter + 1;
-
-		if(s->queue_tks_susp->next != NULL)
+		if (s->counter <= 0)
 		{
-			task_resume(s->queue_tks_susp, &s->queue_tks_susp);
-			return 0;
+			if(s->queue_tks_susp != NULL)
+			{
+				tk_atual->sys_tf = 0;
+				task_resume(s->queue_tks_susp, &s->queue_tks_susp);
+				return 0;
+			}
 		}
+		return 0;
 	}
 }
 
 // destroi o semáforo, liberando as tarefas bloqueadas
 int sem_destroy (semaphore_t *s)
 {
-	// Ponteiro auxiliar para manipulação de elementos.
-	task_t* aux = s->queue_tks_susp;
-	// Percorre a fila de suspensas e liberar tarefas
-	do
+	int queueSize;
+	int i;
+
+
+	if ( s == NULL)
 	{
-		task_resume(aux, &s->queue_tks_susp);
-		aux = aux->next;
-	} while(aux != s->queue_tks_susp);
+		return -1;
+	}
+	else
+	{
+		if (s->queue_tks_susp != NULL)
+		{
+			queueSize = queue_size ((queue_t*) s->queue_tks_susp);
+			// Ponteiro auxiliar para manipulação de elementos.
+			task_t* aux = s->queue_tks_susp;
+
+			printf(" %d \n",queueSize);
+
+			for(i=0; i<queueSize; i++)
+			{
+				task_resume(aux, &s->queue_tks_susp);
+				aux = aux->next;
+			}
+		}
+	}
+
+	s = NULL;
+	return 0;
 }
 
 // mutexes

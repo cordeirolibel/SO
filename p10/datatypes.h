@@ -38,7 +38,9 @@ typedef struct task_t
 	int tProcessador; // Tempo de processador
 	int ativ; // Numero de ativações
 
-	
+	// Flag para uso de semaforo
+	int flagSem;
+
 } task_t ;
 
 // estrutura que define um semáforo
