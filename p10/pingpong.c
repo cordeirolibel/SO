@@ -316,7 +316,6 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 			{	
 
 				alarmClk->wakeUp = 0;
-
 				//Remove a tarefa da fila de tarefas adormecidas
 				queue_remove ((queue_t**) &queue_sleep, (queue_t*) alarmClk);
 
@@ -331,7 +330,7 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 
 		//se tiver uma tarefa na fila de prontas
 		if (userTasks>0){
-			next = scheduler() ; // scheduler é uma função
+			next = scheduler(); // scheduler é uma função
 			
 			if (next){
 				//... // ações antes de lançar a tarefa "next", se houverem
@@ -344,7 +343,6 @@ void dispatcher_body (void * arg){ // dispatcher é uma tarefa
 		userTasks = queue_size ((queue_t*) queue_tks);
 		userTasks_sleep = queue_size ((queue_t*) queue_sleep);
 	}
-
 	task_exit(0) ; // encerra a tarefa dispatcher
 }
 
@@ -548,11 +546,11 @@ int sem_down (semaphore_t *s)
 		s->counter = s->counter - 1;
 		if (s->counter < 0)
 		{
-			tk_atual->sys_tf = 0;
 			//Tarefa vai para a fila de suspensas do semaforo
 			queue_append((queue_t**) &s->queue_tks_susp, (queue_t*) tk_atual);
+			tk_atual->sys_tf = 0;
 			task_switch(tk_dispatcher);
-			return sem_down(s);
+			return 0;
 		}
 		else
 		{
@@ -565,6 +563,8 @@ int sem_down (semaphore_t *s)
 // libera o semáforo
 int sem_up (semaphore_t *s)
 {
+	int save_sys;
+	save_sys = tk_atual->sys_tf;
 	tk_atual->sys_tf = 1;
 	if (s == NULL)
 	{
@@ -577,11 +577,15 @@ int sem_up (semaphore_t *s)
 		{
 			if(s->queue_tks_susp != NULL)
 			{
-				tk_atual->sys_tf = 0;
-				task_resume(s->queue_tks_susp, &s->queue_tks_susp);
+
+				task_resume(s->queue_tks_susp, &(s->queue_tks_susp));
+				tk_atual->sys_tf = save_sys;
 				return 0;
 			}
+				
 		}
+
+		tk_atual->sys_tf = save_sys;
 		return 0;
 	}
 }
