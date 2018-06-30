@@ -33,6 +33,8 @@ void TaskB (void * arg)
 
 int main (int argc, char *argv[])
 {
+   printf ("Main INICIO\n") ;
+
    pingpong_init () ;
 
    sem_create (&s1, 1) ;

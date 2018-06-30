@@ -1,7 +1,7 @@
 all: clean_out output clean
 
-output: pingpong-racecond.o queue.o pingpong.o
-	gcc -Wall -Wextra pingpong-racecond.o queue.o pingpong.o -o output
+output: pingpong-prodcons.o queue.o pingpong.o
+	gcc -Wall -Wextra pingpong-prodcons.o queue.o pingpong.o -o output
 
 pingpong-racecond.o: pingpong-racecond.c
 	gcc -c pingpong-racecond.c
@@ -9,6 +9,9 @@ pingpong-racecond.o: pingpong-racecond.c
 pingpong-semaphore.o: pingpong-semaphore.c
 	gcc -c pingpong-semaphore.c
 	
+pingpong-prodcons.o: pingpong-prodcons.c
+	gcc -c pingpong-prodcons.c
+
 pingpong.o: pingpong.c pingpong.h datatypes.h
 	gcc -c pingpong.c
 

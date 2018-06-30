@@ -14,6 +14,8 @@ task_t task[NUMTASKS] ;
 semaphore_t  s ;
 long int soma = 0 ;
 
+
+
 void taskBody(void *id)
 {
    int i ;

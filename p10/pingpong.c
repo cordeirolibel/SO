@@ -568,6 +568,7 @@ int sem_up (semaphore_t *s)
 	tk_atual->sys_tf = 1;
 	if (s == NULL)
 	{
+		tk_atual->sys_tf = save_sys;
 		return -1;
 	}
 	else
@@ -608,8 +609,6 @@ int sem_destroy (semaphore_t *s)
 			queueSize = queue_size ((queue_t*) s->queue_tks_susp);
 			// Ponteiro auxiliar para manipulação de elementos.
 			task_t* aux = s->queue_tks_susp;
-
-			printf(" %d \n",queueSize);
 
 			for(i=0; i<queueSize; i++)
 			{
