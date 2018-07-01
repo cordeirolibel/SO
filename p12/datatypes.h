@@ -80,6 +80,8 @@ typedef struct mqueue_t
 	int max;
 	int size;
 
+	int ativo;
+	
 	char* dado;
 
 } mqueue_t ;

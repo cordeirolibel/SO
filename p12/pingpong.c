@@ -663,6 +663,7 @@ int mqueue_create (mqueue_t *queue, int max, int size) {
 	queue->queue = NULL;
 	queue->queue_tks_susp_recv = NULL;
 	queue->queue_tks_susp_send = NULL;
+	queue->ativo = 1;
 	return 0;
 }
 
@@ -681,6 +682,8 @@ int mqueue_send (mqueue_t *queue, void *msg) {
 		task_suspend (tk_atual, &(queue->queue_tks_susp_send));
 		n_itens = mqueue_msgs(queue);
 	}
+	if((queue->ativo)==0)
+		return -1;
 
 	//copia mensagem
 	item = malloc(sizeof(mqueue_t));
@@ -711,6 +714,8 @@ int mqueue_recv (mqueue_t *queue, void *msg) {
 		task_suspend (tk_atual, &(queue->queue_tks_susp_recv));
 		n_itens = mqueue_msgs(queue);
 	}
+	if((queue->ativo)==0)
+		return -1;
 
 	//remove item
 	memcpy(msg,&(queue->queue->dado),queue->size);
@@ -752,10 +757,14 @@ int mqueue_destroy (mqueue_t *queue) {
 		task_resume(aux->prev, &queue->queue_tks_susp_recv);
 		
 	}
+
+	queue->ativo = 0;
 	return 0;
 }
 
 // informa o número de mensagens atualmente na fila
 int mqueue_msgs (mqueue_t *queue) {
+	if (queue==NULL)
+		return -1;
 	return queue_size ((queue_t*) queue->queue);
 }
