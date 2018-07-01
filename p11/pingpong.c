@@ -100,7 +100,7 @@ void pingpong_init () {
 	queue_sleep = NULL;
 
 	task_create(tk_main, NULL, NULL);
-	//task_setprio(tk_main, 1);//<<<<========================================
+	task_setprio(tk_main, 1);//<<<<========================================
 
 	//tarefa dispatcher
 	tk_dispatcher = malloc(sizeof(*tk_dispatcher));
@@ -642,7 +642,7 @@ int mutex_destroy (mutex_t *m) ;
 // Inicializa uma barreira
 int barrier_create (barrier_t *b, int N)
 {
-	if (N <= 0)
+	if (N <= 0 || b == NULL)
 	{
 		return -1;
 	}
@@ -660,6 +660,7 @@ int barrier_join (barrier_t *b)
 {
 	// Ponteiro auxiliar para manipulação de elementos.
 	task_t* aux;
+	int queueSize,i;
 
 	if (b == NULL)
 	{
@@ -669,20 +670,21 @@ int barrier_join (barrier_t *b)
 	{
 		b->n_threads += 1;
 
-		//suspende tarefa
-		task_suspend(tk_atual,&b->queue_barrier);
-
 		if (b->n_threads >= b->total_threads)
 		{
+			queueSize = queue_size ((queue_t*) b->queue_barrier);
+			// Ponteiro auxiliar para manipulação de elementos.
 			aux = b->queue_barrier;
-			do
+			for(i=0; i<queueSize; i++)
 			{
-				task_resume(aux, &b->queue_barrier);
 				aux = aux->next;
-			}while(aux != b->queue_barrier);
-
+				task_resume(aux->prev, &(b->queue_barrier));
+			}
 			b->n_threads = 0;
 		}
+		else
+			//suspende tarefa
+			task_suspend(tk_atual,&b->queue_barrier);
 
 		return 0;
 	}
@@ -694,6 +696,7 @@ int barrier_destroy (barrier_t *b)
 {
 	// Ponteiro auxiliar para manipulação de elementos.
 	task_t* aux;
+	int i,queueSize;
 
 	if (b == NULL)
 	{
@@ -703,12 +706,15 @@ int barrier_destroy (barrier_t *b)
 	{
 		if (b->queue_barrier != NULL)
 		{
+			queueSize = queue_size ((queue_t*) b->queue_barrier);
+			// Ponteiro auxiliar para manipulação de elementos.
 			aux = b->queue_barrier;
-			do
+			for(i=0; i<queueSize; i++)
 			{
-				task_resume(aux, &b->queue_barrier);
 				aux = aux->next;
-			}while(aux != b->queue_barrier);
+				task_resume(aux->prev, &b->queue_barrier);
+			}
+			b->n_threads = 0;
 		}
 
 		b = NULL;
