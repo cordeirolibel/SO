@@ -673,7 +673,7 @@ int mqueue_send (mqueue_t *queue, void *msg) {
 	mqueue_t* item;
 
 	//erro
-	if (queue == NULL)
+	if (queue == NULL||((queue->ativo)==0))
 		return -1;
 
 	//bloqueante: caso a fila esteja cheia
@@ -682,8 +682,9 @@ int mqueue_send (mqueue_t *queue, void *msg) {
 		task_suspend (tk_atual, &(queue->queue_tks_susp_send));
 		n_itens = mqueue_msgs(queue);
 	}
-	if((queue->ativo)==0)
+	if((queue->ativo)==0){
 		return -1;
+	}
 
 	//copia mensagem
 	item = malloc(sizeof(mqueue_t));
@@ -705,7 +706,7 @@ int mqueue_recv (mqueue_t *queue, void *msg) {
 	int n_itens;
 
 	//erro
-	if (queue == NULL)
+	if (queue == NULL||((queue->ativo)==0))
 		return -1;
 
 	//bloqueante: caso não tenha mensagem
@@ -714,9 +715,10 @@ int mqueue_recv (mqueue_t *queue, void *msg) {
 		task_suspend (tk_atual, &(queue->queue_tks_susp_recv));
 		n_itens = mqueue_msgs(queue);
 	}
-	if((queue->ativo)==0)
+	if((queue->ativo)==0){
 		return -1;
-
+	}
+	
 	//remove item
 	memcpy(msg,&(queue->queue->dado),queue->size);
 
