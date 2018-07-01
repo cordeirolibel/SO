@@ -41,6 +41,7 @@ typedef struct task_t
 	// Flag para uso de semaforo
 	int flagSem;
 
+
 } task_t ;
 
 // estrutura que define um semáforo
@@ -63,6 +64,10 @@ typedef struct
 typedef struct
 {
   // preencher quando necessário
+	int n_threads;
+	int total_threads;
+	struct task_t *queue_barrier;
+
 } barrier_t ;
 
 // estrutura que define uma fila de mensagens

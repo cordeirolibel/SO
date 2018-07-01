@@ -193,6 +193,7 @@ int task_create (task_t *task,			// descritor da nova tarefa
 	task->tid = id_tasks;
 	id_tasks++;
 
+
 	if (start_func != NULL)
 	{
 		// ajusta alguns valores internos do contexto salvo em context
@@ -639,13 +640,82 @@ int mutex_destroy (mutex_t *m) ;
 // barreiras
 
 // Inicializa uma barreira
-int barrier_create (barrier_t *b, int N) ;
+int barrier_create (barrier_t *b, int N)
+{
+	if (N <= 0)
+	{
+		return -1;
+	}
+	else
+	{
+		b->n_threads = 0;
+		b->total_threads = N;
+		b->queue_barrier = NULL;
+		return 0;
+	}
+}
 
 // Chega a uma barreira
-int barrier_join (barrier_t *b) ;
+int barrier_join (barrier_t *b)
+{
+	// Ponteiro auxiliar para manipulação de elementos.
+	task_t* aux;
+
+	if (b == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		b->n_threads += 1;
+
+		//suspende tarefa
+		task_suspend(tk_atual,&b->queue_barrier);
+
+		if (b->n_threads >= b->total_threads)
+		{
+			aux = b->queue_barrier;
+			do
+			{
+				task_resume(aux, &b->queue_barrier);
+				aux = aux->next;
+			}while(aux != b->queue_barrier);
+
+			b->n_threads = 0;
+		}
+
+		return 0;
+	}
+
+}
 
 // Destrói uma barreira
-int barrier_destroy (barrier_t *b) ;
+int barrier_destroy (barrier_t *b)
+{
+	// Ponteiro auxiliar para manipulação de elementos.
+	task_t* aux;
+
+	if (b == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		if (b->queue_barrier != NULL)
+		{
+			aux = b->queue_barrier;
+			do
+			{
+				task_resume(aux, &b->queue_barrier);
+				aux = aux->next;
+			}while(aux != b->queue_barrier);
+		}
+
+		b = NULL;
+
+		return 0;
+	}
+}
 
 // filas de mensagens
 

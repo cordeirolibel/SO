@@ -1,7 +1,7 @@
 all: clean_out output clean
 
-output: pingpong-prodcons.o queue.o pingpong.o
-	gcc -Wall -Wextra pingpong-prodcons.o queue.o pingpong.o -o output
+output: pingpong-racecond.o queue.o pingpong.o
+	gcc -Wall -Wextra pingpong-racecond.o queue.o pingpong.o -o output
 
 pingpong-racecond.o: pingpong-racecond.c
 	gcc -c pingpong-racecond.c
