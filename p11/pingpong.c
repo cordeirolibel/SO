@@ -692,8 +692,8 @@ int barrier_join (barrier_t *b)
 // Destrói uma barreira
 int barrier_destroy (barrier_t *b)
 {
-	// Ponteiro auxiliar para manipulação de elementos.
-	task_t* aux;
+	int i;
+	int queueSize;
 
 	if (b == NULL)
 	{
@@ -703,12 +703,17 @@ int barrier_destroy (barrier_t *b)
 	{
 		if (b->queue_barrier != NULL)
 		{
-			aux = b->queue_barrier;
-			do
+			queueSize = queue_size ((queue_t*) b->queue_barrier);
+			// Ponteiro auxiliar para manipulação de elementos.
+			task_t* aux = b->queue_barrier;
+
+			for(i=0; i<queueSize; i++)
 			{
 				task_resume(aux, &b->queue_barrier);
 				aux = aux->next;
-			}while(aux != b->queue_barrier);
+			}
+
+			b->n_threads = 0;
 		}
 
 		b = NULL;

@@ -700,7 +700,6 @@ int mqueue_send (mqueue_t *queue, void *msg) {
 // recebe uma mensagem da fila
 int mqueue_recv (mqueue_t *queue, void *msg) {
 	int n_itens;
-	mqueue_t* item;
 
 	//erro
 	if (queue == NULL)
@@ -715,8 +714,7 @@ int mqueue_recv (mqueue_t *queue, void *msg) {
 
 	//remove item
 	memcpy(msg,&(queue->queue->dado),queue->size);
-	item = queue->queue;
-	queue_remove ((queue_t**) &(queue->queue), (queue_t*)item);
+	queue_remove ((queue_t**) &(queue->queue), (queue_t*)queue->queue);
 	//free(item->dado);
 	//free(item);
 
@@ -738,16 +736,16 @@ int mqueue_destroy (mqueue_t *queue) {
 	n_itens = queue_size ((queue_t*) queue->queue_tks_susp_send);
 	for(i=0; i<n_itens; i++)
 	{
-		task_resume(aux, &queue->queue_tks_susp_send);
 		aux = aux->next;
+		task_resume(aux->prev, &queue->queue_tks_susp_send);
 	}
 
 	//libera tarefas recebe
 	n_itens = queue_size ((queue_t*) queue->queue_tks_susp_recv);
 	for(i=0; i<n_itens; i++)
 	{
-		task_resume(aux, &queue->queue_tks_susp_recv);
 		aux = aux->next;
+		task_resume(aux->prev, &queue->queue_tks_susp_recv);
 	}
 	return 0;
 }
