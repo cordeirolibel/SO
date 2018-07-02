@@ -669,7 +669,7 @@ int mqueue_create (mqueue_t *queue, int max, int size) {
 
 // envia uma mensagem para a fila
 int mqueue_send (mqueue_t *queue, void *msg) {
-	int n_itens;
+	int n_itens,sys;
 	mqueue_t* item;
 
 	//erro
@@ -689,9 +689,14 @@ int mqueue_send (mqueue_t *queue, void *msg) {
 	//copia mensagem
 	item = malloc(sizeof(mqueue_t));
 	item->dado = malloc(sizeof(queue->size));
+	
+	sys = tk_atual->sys_tf;
+	tk_atual->sys_tf = 1;
 	memcpy(&(item->dado),msg,queue->size);
+	tk_atual->sys_tf = sys;
 
 	queue_append((queue_t**) &(queue->queue), (queue_t*) item);
+	
 
 	//libera tarefa
 	n_itens = queue_size ((queue_t*) queue->queue_tks_susp_recv);
@@ -721,6 +726,7 @@ int mqueue_recv (mqueue_t *queue, void *msg) {
 	
 	//remove item
 	memcpy(msg,&(queue->queue->dado),queue->size);
+
 
 	queue_remove ((queue_t**) &(queue->queue), (queue_t*)queue->queue);
 	//free(item->dado);
