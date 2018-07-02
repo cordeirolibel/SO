@@ -63,6 +63,10 @@ typedef struct
 typedef struct
 {
   // preencher quando necessário
+	int n_threads;
+	int total_threads;
+	struct task_t *queue_barrier;
+
 } barrier_t ;
 
 // estrutura que define uma fila de mensagens

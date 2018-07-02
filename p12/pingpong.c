@@ -638,15 +638,89 @@ int mutex_unlock (mutex_t *m) ;
 int mutex_destroy (mutex_t *m) ;
 
 // barreiras
-
 // Inicializa uma barreira
-int barrier_create (barrier_t *b, int N) ;
+int barrier_create (barrier_t *b, int N)
+{
+	if (N <= 0 || b == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		b->n_threads = 0;
+		b->total_threads = N;
+		b->queue_barrier = NULL;
+		return 0;
+	}
+}
 
 // Chega a uma barreira
-int barrier_join (barrier_t *b) ;
+int barrier_join (barrier_t *b)
+{
+	// Ponteiro auxiliar para manipulação de elementos.
+	task_t* aux;
+	int queueSize,i;
+
+	if (b == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		b->n_threads += 1;
+
+		if (b->n_threads >= b->total_threads)
+		{
+			queueSize = queue_size ((queue_t*) b->queue_barrier);
+			// Ponteiro auxiliar para manipulação de elementos.
+			aux = b->queue_barrier;
+			for(i=0; i<queueSize; i++)
+			{
+				aux = aux->next;
+				task_resume(aux->prev, &(b->queue_barrier));
+			}
+			b->n_threads = 0;
+		}
+		else
+			//suspende tarefa
+			task_suspend(tk_atual,&b->queue_barrier);
+
+		return 0;
+	}
+
+}
 
 // Destrói uma barreira
-int barrier_destroy (barrier_t *b) ;
+int barrier_destroy (barrier_t *b)
+{
+	// Ponteiro auxiliar para manipulação de elementos.
+	task_t* aux;
+	int i,queueSize;
+
+	if (b == NULL)
+	{
+		return -1;
+	}
+	else
+	{
+		if (b->queue_barrier != NULL)
+		{
+			queueSize = queue_size ((queue_t*) b->queue_barrier);
+			// Ponteiro auxiliar para manipulação de elementos.
+			aux = b->queue_barrier;
+			for(i=0; i<queueSize; i++)
+			{
+				aux = aux->next;
+				task_resume(aux->prev, &b->queue_barrier);
+			}
+			b->n_threads = 0;
+		}
+
+		b = NULL;
+
+		return 0;
+	}
+}
 
 // filas de mensagens
 
